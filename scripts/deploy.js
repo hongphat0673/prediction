@@ -1,4 +1,6 @@
 const hre = require("hardhat");
+const fs = require("fs");
+const path = require("path");
 
 async function main() {
   console.log("Deploying PredictionPool contract to", hre.network.name);
@@ -62,6 +64,28 @@ async function main() {
   console.log("\n=== Deployment Summary ===");
   console.log(JSON.stringify(deploymentInfo, null, 2));
   console.log("==========================\n");
+
+  // Save deployment info to file
+  const deploymentsDir = path.join(__dirname, "..", "deployments");
+  if (!fs.existsSync(deploymentsDir)) {
+    fs.mkdirSync(deploymentsDir);
+  }
+
+  const deploymentFile = path.join(
+    deploymentsDir,
+    `${hre.network.name}-${Date.now()}.json`
+  );
+  fs.writeFileSync(deploymentFile, JSON.stringify(deploymentInfo, null, 2));
+  console.log(`✅ Deployment info saved to: ${deploymentFile}`);
+
+  // Also save as latest
+  const latestFile = path.join(deploymentsDir, `${hre.network.name}-latest.json`);
+  fs.writeFileSync(latestFile, JSON.stringify(deploymentInfo, null, 2));
+  console.log(`✅ Latest deployment saved to: ${latestFile}`);
+
+  console.log("\n🎉 Deployment completed successfully!");
+  console.log(`📋 Contract Address: ${contractAddress}`);
+  console.log(`🔗 View on BaseScan: https://${hre.network.name === 'base' ? '' : 'sepolia.'}basescan.org/address/${contractAddress}\n`);
 
   return deploymentInfo;
 }
