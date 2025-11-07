@@ -224,6 +224,46 @@ export const CONTRACT_ABI = [
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "sessionId", "type": "uint256"}
+    ],
+    "name": "emergencyWithdraw",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "sessionId", "type": "uint256"},
+      {"internalType": "address", "name": "user", "type": "address"},
+      {"internalType": "uint256", "name": "optionId", "type": "uint256"}
+    ],
+    "name": "calculatePotentialWinnings",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "sessionId", "type": "uint256"},
+      {"internalType": "address", "name": "user", "type": "address"}
+    ],
+    "name": "getUserPredictions",
+    "outputs": [{"internalType": "uint256[]", "name": "", "type": "uint256[]"}],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {"internalType": "uint256", "name": "sessionId", "type": "uint256"},
+      {"internalType": "address", "name": "user", "type": "address"}
+    ],
+    "name": "getUserTotalPrediction",
+    "outputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "stateMutability": "view",
+    "type": "function"
   }
 ]
 
