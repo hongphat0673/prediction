@@ -52,6 +52,14 @@ function App() {
         return
       }
 
+      // Check if ethereum provider is available
+      if (!window.ethereum) {
+        console.error('No ethereum provider found')
+        setSessions([])
+        setLoading(false)
+        return
+      }
+
       // Query the contract directly to double-check sessionCounter
       const provider = new ethers.BrowserProvider(window.ethereum)
       const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
@@ -113,7 +121,12 @@ function App() {
       setSessions(sessionsData)
     } catch (error) {
       console.error('Error loading sessions:', error)
-      showNotification('Error loading sessions', 'error')
+      // Only show error notification for critical errors
+      if (error.code !== 'ACTION_REJECTED') {
+        console.error('Critical error loading sessions:', error.message)
+      }
+      // Set empty sessions array on error
+      setSessions([])
     } finally {
       setLoading(false)
     }
