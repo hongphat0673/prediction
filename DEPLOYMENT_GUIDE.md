@@ -12,8 +12,9 @@
    - Export from MetaMask: Account Details → Show Private Key
    - ⚠️ **NEVER share or commit your private key!**
 
-3. **BaseScan API Key** (optional, for verification)
-   - Get from [BaseScan](https://basescan.org/myapikey)
+3. **Etherscan API Key** (optional, for verification)
+   - Get from [Etherscan](https://etherscan.io/myapikey)
+   - Works for both Etherscan and BaseScan verification
 
 ### Step 1: Configure Environment
 
@@ -26,7 +27,7 @@ nano .env
 Update with your values:
 ```env
 PRIVATE_KEY=your_private_key_here
-BASESCAN_API_KEY=your_api_key_here  # Optional
+ETHERSCAN_API_KEY=your_api_key_here  # Optional
 ```
 
 ### Step 2: Install Dependencies

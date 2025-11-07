@@ -85,8 +85,8 @@ async function main() {
   console.log("✅ Confirmed!\n");
 
   // Verify
-  if (network !== "hardhat" && process.env.BASESCAN_API_KEY) {
-    console.log("⏳ Verifying contract on BaseScan...");
+  if (network !== "hardhat" && process.env.ETHERSCAN_API_KEY) {
+    console.log("⏳ Verifying contract on BaseScan (via Etherscan)...");
     try {
       await hre.run("verify:verify", {
         address: contractAddress,
