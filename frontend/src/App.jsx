@@ -108,10 +108,16 @@ function App() {
     setTimeout(() => setNotification(null), 5000)
   }
 
-  const handleSessionCreated = () => {
+  const handleSessionCreated = async () => {
     setShowCreateModal(false)
     showNotification('Session created successfully!', 'success')
-    loadSessions()
+    // Add a small delay to ensure blockchain state is updated
+    setTimeout(async () => {
+      // Refetch the session counter first to get the latest count
+      await refetchCounter()
+      // Then load all sessions including the new one
+      loadSessions()
+    }, 1500)
   }
 
   const handlePredictClick = (session) => {
@@ -119,10 +125,13 @@ function App() {
     setShowPredictModal(true)
   }
 
-  const handlePredictionPlaced = () => {
+  const handlePredictionPlaced = async () => {
     setShowPredictModal(false)
     showNotification('Prediction placed successfully!', 'success')
-    loadSessions()
+    // Add a small delay to ensure blockchain state is updated
+    setTimeout(() => {
+      loadSessions()
+    }, 1000)
   }
 
   const filterSessions = () => {
