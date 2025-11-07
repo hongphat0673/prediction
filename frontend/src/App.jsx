@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAccount, useReadContract } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { ethers } from 'ethers'
@@ -31,15 +31,12 @@ function App() {
     }
   })
 
-  // Load all sessions when sessionCounter changes
-  useEffect(() => {
-    if (sessionCounter) {
-      console.log('Session counter:', sessionCounter?.toString())
-      loadSessions()
-    }
-  }, [sessionCounter, address])
+  const showNotification = useCallback((message, type = 'info') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 5000)
+  }, [])
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     console.log('=== loadSessions called ===')
     setLoading(true)
     try {
@@ -120,12 +117,15 @@ function App() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [sessionCounter, address, showNotification])
 
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type })
-    setTimeout(() => setNotification(null), 5000)
-  }
+  // Load all sessions when sessionCounter changes
+  useEffect(() => {
+    if (sessionCounter) {
+      console.log('Session counter:', sessionCounter?.toString())
+      loadSessions()
+    }
+  }, [sessionCounter, loadSessions])
 
   const handleSessionCreated = () => {
     setShowCreateModal(false)
