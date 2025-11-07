@@ -19,7 +19,6 @@ function App() {
   const [notification, setNotification] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all') // all, active, closed
-  const [refreshKey, setRefreshKey] = useState(0) // Force refresh key
 
   // Read session counter - disable caching to get fresh data
   const { data: sessionCounter, refetch: refetchCounter } = useReadContract({
@@ -32,13 +31,13 @@ function App() {
     }
   })
 
-  // Load all sessions when sessionCounter or refreshKey changes
+  // Load all sessions when sessionCounter changes
   useEffect(() => {
     if (sessionCounter) {
       console.log('Session counter:', sessionCounter?.toString())
       loadSessions()
     }
-  }, [sessionCounter, address, refreshKey])
+  }, [sessionCounter, address])
 
   const loadSessions = async () => {
     console.log('=== loadSessions called ===')
@@ -130,18 +129,7 @@ function App() {
 
   const handleSessionCreated = () => {
     setShowCreateModal(false)
-    showNotification('Session created successfully! Click Refresh to see it.', 'success')
-  }
-
-  const forceRefresh = async () => {
-    console.log('=== Force refresh triggered ===')
-    console.log('Current sessionCounter before refetch:', sessionCounter?.toString())
-    showNotification('Refreshing sessions...', 'info')
-
-    const result = await refetchCounter()
-    console.log('SessionCounter after refetch:', result?.data?.toString())
-    console.log('Incrementing refresh key to force re-render')
-    setRefreshKey(prev => prev + 1)
+    showNotification('Session created successfully!', 'success')
   }
 
   const handlePredictClick = (session) => {
@@ -212,40 +200,30 @@ function App() {
         </div>
       ) : (
         <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div className="nav-tabs" style={{ marginBottom: 0 }}>
-              <button
-                className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-                onClick={() => setActiveTab('all')}
-              >
-                All Sessions
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'my-predictions' ? 'active' : ''}`}
-                onClick={() => setActiveTab('my-predictions')}
-              >
-                My Predictions
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'creator' ? 'active' : ''}`}
-                onClick={() => setActiveTab('creator')}
-              >
-                My Sessions
-              </button>
-              <button
-                className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-                onClick={() => setActiveTab('dashboard')}
-              >
-                Dashboard
-              </button>
-            </div>
+          <div className="nav-tabs">
             <button
-              className="button button-secondary"
-              onClick={forceRefresh}
-              disabled={loading}
-              style={{ padding: '0.5rem 1rem' }}
+              className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
+              onClick={() => setActiveTab('all')}
             >
-              {loading ? '⟳ Refreshing...' : '🔄 Refresh'}
+              All Sessions
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'my-predictions' ? 'active' : ''}`}
+              onClick={() => setActiveTab('my-predictions')}
+            >
+              My Predictions
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'creator' ? 'active' : ''}`}
+              onClick={() => setActiveTab('creator')}
+            >
+              My Sessions
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              Dashboard
             </button>
           </div>
 
