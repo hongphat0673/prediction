@@ -16,10 +16,16 @@ A decentralized prediction pool application built on Base network that allows us
 ### For End Users
 - Connect EVM wallet (MetaMask, Rainbow, Coinbase Wallet, etc.)
 - Browse all active prediction sessions
+- **NEW!** Search and filter sessions by name, status, and options
 - Place predictions on any option by depositing USDC
 - View personal prediction history
+- **NEW!** Comprehensive analytics dashboard with:
+  - Total bet amount and winnings
+  - Win rate statistics
+  - Net profit/loss tracking
+  - Prediction history with results
 - Claim rewards after winning predictions
-- See real-time pool statistics
+- See real-time pool statistics and potential winnings
 
 ### Smart Contract Features
 - Deployed on Base Network (Mainnet and Sepolia Testnet)
@@ -196,12 +202,16 @@ The production build will be in `frontend/dist/`
 - `claimRewards(sessionId)` - Claim rewards for winning predictions
 - `deleteSession(sessionId)` - Delete a session with no predictions (creator only)
 - `updateSession(sessionId, name, endTime, minPrediction, maxPrediction)` - Update session details (creator only, no predictions)
+- `emergencyWithdraw(sessionId)` - **NEW!** Emergency refund all participants (creator only, before winner selection)
 
 **View Functions:**
 
 - `getSessionDetails(sessionId)` - Get session information
 - `getOptionDetails(sessionId, optionId)` - Get option details
 - `getUserPrediction(sessionId, user, optionId)` - Get user's prediction amount
+- `calculatePotentialWinnings(sessionId, user, optionId)` - **NEW!** Calculate potential winnings if option wins
+- `getUserPredictions(sessionId, user)` - **NEW!** Get all user predictions for a session
+- `getUserTotalPrediction(sessionId, user)` - **NEW!** Get total amount user has bet in a session
 
 **Events:**
 
@@ -247,6 +257,28 @@ The production build will be in `frontend/dist/`
    - **Close Session**: Stop accepting new predictions
    - **Select Winner**: Choose the winning option after closing
    - **Delete**: Remove session (only if no predictions placed)
+   - **Emergency Withdraw**: Refund all participants if something goes wrong (only before winner selection)
+
+### Viewing Analytics Dashboard
+
+1. Connect your wallet
+2. Navigate to "Dashboard" tab
+3. View comprehensive statistics:
+   - Total amount bet across all sessions
+   - Total winnings from successful predictions
+   - Active and completed predictions count
+   - Win rate percentage
+   - Net profit/loss
+   - Detailed prediction history with results
+
+### Searching and Filtering Sessions
+
+1. In "All Sessions" or "My Predictions" tab
+2. Use the search bar to find sessions by name or option
+3. Use filter buttons to show:
+   - **All**: All sessions
+   - **Active**: Only active sessions accepting predictions
+   - **Closed**: Only closed/completed sessions
 
 ### Claiming Rewards
 

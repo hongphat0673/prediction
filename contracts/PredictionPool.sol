@@ -427,4 +427,117 @@ contract PredictionPool is Ownable, ReentrancyGuard {
         require(newFee <= 1000, "Fee cannot exceed 10%");
         platformFee = newFee;
     }
+
+    /**
+     * @dev Emergency withdraw function for session creator
+     * Allows creator to refund all participants if something goes wrong
+     * Can only be called if winner hasn't been selected yet
+     * @param sessionId ID of the session to withdraw from
+     */
+    function emergencyWithdraw(uint256 sessionId)
+        external
+        sessionExists(sessionId)
+        onlySessionCreator(sessionId)
+        nonReentrant
+    {
+        Session storage session = sessions[sessionId];
+        require(!session.winnerSelected, "Cannot withdraw after winner selected");
+        require(session.totalPool > 0, "No funds to withdraw");
+
+        uint256 totalPool = session.totalPool;
+
+        // Mark session as distributed to prevent further actions
+        session.status = SessionStatus.Distributed;
+
+        // Refund all participants proportionally
+        for (uint256 i = 0; i < session.optionCount; i++) {
+            PredictionOption storage option = session.options[i];
+            address[] memory predictors = option.predictors;
+
+            for (uint256 j = 0; j < predictors.length; j++) {
+                address predictor = predictors[j];
+                uint256 userAmount = session.userPredictions[predictor][i];
+
+                if (userAmount > 0 && !session.hasClaimed[predictor]) {
+                    session.hasClaimed[predictor] = true;
+                    usdcToken.safeTransfer(predictor, userAmount);
+                }
+            }
+        }
+
+        emit SessionClosed(sessionId, block.timestamp);
+    }
+
+    /**
+     * @dev Calculate potential winnings for a user in a specific session
+     * @param sessionId ID of the session
+     * @param user Address of the user
+     * @param optionId Option ID to calculate winnings for
+     * @return Potential winnings if this option wins
+     */
+    function calculatePotentialWinnings(
+        uint256 sessionId,
+        address user,
+        uint256 optionId
+    ) external view sessionExists(sessionId) returns (uint256) {
+        Session storage session = sessions[sessionId];
+
+        if (session.totalPool == 0) return 0;
+
+        uint256 userPrediction = session.userPredictions[user][optionId];
+        if (userPrediction == 0) return 0;
+
+        PredictionOption storage option = session.options[optionId];
+        if (option.totalAmount == 0) return 0;
+
+        // Calculate potential winnings
+        uint256 feeAmount = (session.totalPool * platformFee) / FEE_DENOMINATOR;
+        uint256 distributionPool = session.totalPool - feeAmount;
+
+        return (distributionPool * userPrediction) / option.totalAmount;
+    }
+
+    /**
+     * @dev Get all user predictions for a session
+     * @param sessionId ID of the session
+     * @param user Address of the user
+     * @return Array of prediction amounts for each option
+     */
+    function getUserPredictions(uint256 sessionId, address user)
+        external
+        view
+        sessionExists(sessionId)
+        returns (uint256[] memory)
+    {
+        Session storage session = sessions[sessionId];
+        uint256[] memory predictions = new uint256[](session.optionCount);
+
+        for (uint256 i = 0; i < session.optionCount; i++) {
+            predictions[i] = session.userPredictions[user][i];
+        }
+
+        return predictions;
+    }
+
+    /**
+     * @dev Get total amount user has bet in a session
+     * @param sessionId ID of the session
+     * @param user Address of the user
+     * @return Total amount bet by user
+     */
+    function getUserTotalPrediction(uint256 sessionId, address user)
+        external
+        view
+        sessionExists(sessionId)
+        returns (uint256)
+    {
+        Session storage session = sessions[sessionId];
+        uint256 total = 0;
+
+        for (uint256 i = 0; i < session.optionCount; i++) {
+            total += session.userPredictions[user][i];
+        }
+
+        return total;
+    }
 }
