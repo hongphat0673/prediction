@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useAccount, useContractRead } from 'wagmi'
+import { useAccount, useReadContract } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { ethers } from 'ethers'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from './contractConfig'
@@ -21,11 +21,10 @@ function App() {
   const [statusFilter, setStatusFilter] = useState('all') // all, active, closed
 
   // Read session counter
-  const { data: sessionCounter } = useContractRead({
+  const { data: sessionCounter, refetch: refetchCounter } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'sessionCounter',
-    watch: true,
   })
 
   // Load all sessions

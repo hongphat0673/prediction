@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useContractWrite, useWaitForTransactionReceipt, useAccount } from 'wagmi'
+import { useWriteContract, useWaitForTransactionReceipt, useAccount } from 'wagmi'
 import { CONTRACT_ADDRESS, CONTRACT_ABI, USDC_ADDRESSES, USDC_ABI } from '../contractConfig'
 import { ethers } from 'ethers'
 
@@ -13,8 +13,8 @@ function PredictModal({ session, onClose, onSuccess, showNotification }) {
 
   const usdcAddress = USDC_ADDRESSES[chain?.id] || USDC_ADDRESSES[8453]
 
-  const { data: approveHash, writeContract: approveUSDC, isPending: isApproving } = useContractWrite()
-  const { data: predictHash, writeContract: placePrediction, isPending: isPredicting } = useContractWrite()
+  const { data: approveHash, writeContract: approveUSDC, isPending: isApproving } = useWriteContract()
+  const { data: predictHash, writeContract: placePrediction, isPending: isPredicting } = useWriteContract()
 
   const { isSuccess: approveSuccess } = useWaitForTransactionReceipt({ hash: approveHash })
   const { isSuccess: predictSuccess } = useWaitForTransactionReceipt({ hash: predictHash })
