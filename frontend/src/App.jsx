@@ -19,26 +19,29 @@ function App() {
   const [notification, setNotification] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all') // all, active, closed
+  const [refreshKey, setRefreshKey] = useState(0) // Force refresh key
 
-  // Read session counter
+  // Read session counter with refetch interval
   const { data: sessionCounter, refetch: refetchCounter } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'sessionCounter',
   })
 
-  // Load all sessions
+  // Load all sessions when sessionCounter or refreshKey changes
   useEffect(() => {
     if (sessionCounter) {
+      console.log('Session counter:', sessionCounter?.toString())
       loadSessions()
     }
-  }, [sessionCounter, address])
+  }, [sessionCounter, address, refreshKey])
 
   const loadSessions = async () => {
     setLoading(true)
     try {
       const sessionsData = []
       const count = Number(sessionCounter)
+      console.log('Loading sessions, total count:', count)
 
       for (let i = 1; i <= count; i++) {
         try {
@@ -46,6 +49,7 @@ function App() {
           const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
 
           const details = await contract.getSessionDetails(i)
+          console.log(`Loaded session ${i}:`, details.name)
 
           // Load options for this session
           const options = []
@@ -110,14 +114,23 @@ function App() {
 
   const handleSessionCreated = async () => {
     setShowCreateModal(false)
-    showNotification('Session created successfully!', 'success')
+    showNotification('Session created successfully! Refreshing...', 'success')
     // Add a small delay to ensure blockchain state is updated
     setTimeout(async () => {
+      console.log('Refetching session counter...')
       // Refetch the session counter first to get the latest count
-      await refetchCounter()
-      // Then load all sessions including the new one
-      loadSessions()
-    }, 1500)
+      const result = await refetchCounter()
+      console.log('New session counter:', result?.data?.toString())
+      // Force refresh by incrementing the key
+      setRefreshKey(prev => prev + 1)
+    }, 2000)
+  }
+
+  const forceRefresh = async () => {
+    console.log('Force refresh triggered')
+    showNotification('Refreshing sessions...', 'info')
+    await refetchCounter()
+    setRefreshKey(prev => prev + 1)
   }
 
   const handlePredictClick = (session) => {
@@ -188,30 +201,40 @@ function App() {
         </div>
       ) : (
         <>
-          <div className="nav-tabs">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="nav-tabs" style={{ marginBottom: 0 }}>
+              <button
+                className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All Sessions
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'my-predictions' ? 'active' : ''}`}
+                onClick={() => setActiveTab('my-predictions')}
+              >
+                My Predictions
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'creator' ? 'active' : ''}`}
+                onClick={() => setActiveTab('creator')}
+              >
+                My Sessions
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                Dashboard
+              </button>
+            </div>
             <button
-              className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all')}
+              className="button button-secondary"
+              onClick={forceRefresh}
+              disabled={loading}
+              style={{ padding: '0.5rem 1rem' }}
             >
-              All Sessions
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'my-predictions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('my-predictions')}
-            >
-              My Predictions
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'creator' ? 'active' : ''}`}
-              onClick={() => setActiveTab('creator')}
-            >
-              My Sessions
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
-            >
-              Dashboard
+              {loading ? '⟳ Refreshing...' : '🔄 Refresh'}
             </button>
           </div>
 
