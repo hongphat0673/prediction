@@ -21,11 +21,15 @@ function App() {
   const [statusFilter, setStatusFilter] = useState('all') // all, active, closed
   const [refreshKey, setRefreshKey] = useState(0) // Force refresh key
 
-  // Read session counter with refetch interval
+  // Read session counter - disable caching to get fresh data
   const { data: sessionCounter, refetch: refetchCounter } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'sessionCounter',
+    query: {
+      gcTime: 0, // Don't cache the data
+      staleTime: 0, // Always consider data stale
+    }
   })
 
   // Load all sessions when sessionCounter or refreshKey changes
@@ -37,19 +41,31 @@ function App() {
   }, [sessionCounter, address, refreshKey])
 
   const loadSessions = async () => {
+    console.log('=== loadSessions called ===')
     setLoading(true)
     try {
       const sessionsData = []
       const count = Number(sessionCounter)
+      console.log('SessionCounter value in loadSessions:', sessionCounter?.toString())
       console.log('Loading sessions, total count:', count)
+
+      if (count === 0) {
+        console.log('⚠️ SessionCounter is 0, no sessions to load')
+        setSessions([])
+        setLoading(false)
+        return
+      }
+
+      // Query the contract directly to double-check sessionCounter
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      const onChainCounter = await contract.sessionCounter()
+      console.log('On-chain sessionCounter (via ethers):', onChainCounter.toString())
 
       for (let i = 1; i <= count; i++) {
         try {
-          const provider = new ethers.BrowserProvider(window.ethereum)
-          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-
           const details = await contract.getSessionDetails(i)
-          console.log(`Loaded session ${i}:`, details.name)
+          console.log(`✅ Loaded session ${i}:`, details.name)
 
           // Load options for this session
           const options = []
@@ -118,9 +134,13 @@ function App() {
   }
 
   const forceRefresh = async () => {
-    console.log('Force refresh triggered')
+    console.log('=== Force refresh triggered ===')
+    console.log('Current sessionCounter before refetch:', sessionCounter?.toString())
     showNotification('Refreshing sessions...', 'info')
-    await refetchCounter()
+
+    const result = await refetchCounter()
+    console.log('SessionCounter after refetch:', result?.data?.toString())
+    console.log('Incrementing refresh key to force re-render')
     setRefreshKey(prev => prev + 1)
   }
 
