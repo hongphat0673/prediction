@@ -1,7 +1,7 @@
 // Contract configuration
-// After deploying the contract, update the address here
+// Deployed contract address on Base Sepolia
 
-export const CONTRACT_ADDRESS = "YOUR_CONTRACT_ADDRESS_HERE"
+export const CONTRACT_ADDRESS = "0x8EBC4A73788D38D2697B219A2d37e10f7f0BBC92"
 
 export const CONTRACT_ABI = [
   {

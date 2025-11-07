@@ -3,7 +3,7 @@ import { base, baseSepolia } from 'wagmi/chains'
 
 export const config = getDefaultConfig({
   appName: 'Prediction Pool dApp',
-  projectId: 'YOUR_PROJECT_ID', // Get from WalletConnect Cloud
+  projectId: '8f64c64269d5f30ab7e0cbd5adf75f45', // WalletConnect Cloud Project ID
   chains: [base, baseSepolia],
   ssr: false,
 })
