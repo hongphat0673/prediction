@@ -112,18 +112,9 @@ function App() {
     setTimeout(() => setNotification(null), 5000)
   }
 
-  const handleSessionCreated = async () => {
+  const handleSessionCreated = () => {
     setShowCreateModal(false)
-    showNotification('Session created successfully! Refreshing...', 'success')
-    // Add a small delay to ensure blockchain state is updated
-    setTimeout(async () => {
-      console.log('Refetching session counter...')
-      // Refetch the session counter first to get the latest count
-      const result = await refetchCounter()
-      console.log('New session counter:', result?.data?.toString())
-      // Force refresh by incrementing the key
-      setRefreshKey(prev => prev + 1)
-    }, 2000)
+    showNotification('Session created successfully! Click Refresh to see it.', 'success')
   }
 
   const forceRefresh = async () => {
