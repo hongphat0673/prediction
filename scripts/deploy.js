@@ -38,9 +38,9 @@ async function main() {
   console.log("Waiting for block confirmations...");
   await predictionPool.deploymentTransaction().wait(5);
 
-  // Verify the contract on BaseScan if not on hardhat network
-  if (hre.network.name !== "hardhat" && process.env.BASESCAN_API_KEY) {
-    console.log("Verifying contract on BaseScan...");
+  // Verify the contract on Etherscan/BaseScan if not on hardhat network
+  if (hre.network.name !== "hardhat" && process.env.ETHERSCAN_API_KEY) {
+    console.log("Verifying contract on BaseScan (via Etherscan)...");
     try {
       await hre.run("verify:verify", {
         address: contractAddress,

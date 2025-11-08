@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { useAccount, useContractRead } from 'wagmi'
+import { useState, useEffect, useCallback } from 'react'
+import { useAccount, useReadContract } from 'wagmi'
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import { ethers } from 'ethers'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from './contractConfig'
@@ -20,33 +20,56 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all') // all, active, closed
 
-  // Read session counter
-  const { data: sessionCounter } = useContractRead({
+  // Read session counter - disable caching to get fresh data
+  const { data: sessionCounter, refetch: refetchCounter } = useReadContract({
     address: CONTRACT_ADDRESS,
     abi: CONTRACT_ABI,
     functionName: 'sessionCounter',
-    watch: true,
+    query: {
+      gcTime: 0, // Don't cache the data
+      staleTime: 0, // Always consider data stale
+    }
   })
 
-  // Load all sessions
-  useEffect(() => {
-    if (sessionCounter) {
-      loadSessions()
-    }
-  }, [sessionCounter, address])
+  const showNotification = useCallback((message, type = 'info') => {
+    setNotification({ message, type })
+    setTimeout(() => setNotification(null), 5000)
+  }, [])
 
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
+    console.log('=== loadSessions called ===')
     setLoading(true)
     try {
       const sessionsData = []
       const count = Number(sessionCounter)
+      console.log('SessionCounter value in loadSessions:', sessionCounter?.toString())
+      console.log('Loading sessions, total count:', count)
+
+      if (count === 0) {
+        console.log('⚠️ SessionCounter is 0, no sessions to load')
+        setSessions([])
+        setLoading(false)
+        return
+      }
+
+      // Check if ethereum provider is available
+      if (!window.ethereum) {
+        console.error('No ethereum provider found')
+        setSessions([])
+        setLoading(false)
+        return
+      }
+
+      // Query the contract directly to double-check sessionCounter
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+      const onChainCounter = await contract.sessionCounter()
+      console.log('On-chain sessionCounter (via ethers):', onChainCounter.toString())
 
       for (let i = 1; i <= count; i++) {
         try {
-          const provider = new ethers.BrowserProvider(window.ethereum)
-          const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
-
           const details = await contract.getSessionDetails(i)
+          console.log(`✅ Loaded session ${i}:`, details.name)
 
           // Load options for this session
           const options = []
@@ -98,21 +121,28 @@ function App() {
       setSessions(sessionsData)
     } catch (error) {
       console.error('Error loading sessions:', error)
-      showNotification('Error loading sessions', 'error')
+      // Only show error notification for critical errors
+      if (error.code !== 'ACTION_REJECTED') {
+        console.error('Critical error loading sessions:', error.message)
+      }
+      // Set empty sessions array on error
+      setSessions([])
     } finally {
       setLoading(false)
     }
-  }
+  }, [sessionCounter, address, showNotification])
 
-  const showNotification = (message, type = 'info') => {
-    setNotification({ message, type })
-    setTimeout(() => setNotification(null), 5000)
-  }
+  // Load all sessions when sessionCounter changes
+  useEffect(() => {
+    if (sessionCounter) {
+      console.log('Session counter:', sessionCounter?.toString())
+      loadSessions()
+    }
+  }, [sessionCounter, loadSessions])
 
   const handleSessionCreated = () => {
     setShowCreateModal(false)
     showNotification('Session created successfully!', 'success')
-    loadSessions()
   }
 
   const handlePredictClick = (session) => {
@@ -120,10 +150,13 @@ function App() {
     setShowPredictModal(true)
   }
 
-  const handlePredictionPlaced = () => {
+  const handlePredictionPlaced = async () => {
     setShowPredictModal(false)
     showNotification('Prediction placed successfully!', 'success')
-    loadSessions()
+    // Add a small delay to ensure blockchain state is updated
+    setTimeout(() => {
+      loadSessions()
+    }, 1000)
   }
 
   const filterSessions = () => {

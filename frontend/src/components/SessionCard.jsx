@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useContractWrite, useWaitForTransactionReceipt } from 'wagmi'
+import { useState, useEffect } from 'react'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../contractConfig'
 import { ethers } from 'ethers'
 
@@ -7,10 +7,10 @@ function SessionCard({ session, userAddress, onPredict, onRefresh, showNotificat
   const [selectedWinner, setSelectedWinner] = useState(null)
   const [showWinnerSelect, setShowWinnerSelect] = useState(false)
 
-  const { data: closeHash, writeContract: closeSession } = useContractWrite()
-  const { data: winnerHash, writeContract: selectWinner } = useContractWrite()
-  const { data: claimHash, writeContract: claimRewards } = useContractWrite()
-  const { data: deleteHash, writeContract: deleteSession } = useContractWrite()
+  const { data: closeHash, writeContract: closeSession } = useWriteContract()
+  const { data: winnerHash, writeContract: selectWinner } = useWriteContract()
+  const { data: claimHash, writeContract: claimRewards } = useWriteContract()
+  const { data: deleteHash, writeContract: deleteSession } = useWriteContract()
 
   const { isSuccess: closeSuccess } = useWaitForTransactionReceipt({ hash: closeHash })
   const { isSuccess: winnerSuccess } = useWaitForTransactionReceipt({ hash: winnerHash })
@@ -18,9 +18,11 @@ function SessionCard({ session, userAddress, onPredict, onRefresh, showNotificat
   const { isSuccess: deleteSuccess } = useWaitForTransactionReceipt({ hash: deleteHash })
 
   // Refresh when transactions succeed
-  if (closeSuccess || winnerSuccess || claimSuccess || deleteSuccess) {
-    onRefresh()
-  }
+  useEffect(() => {
+    if (closeSuccess || winnerSuccess || claimSuccess || deleteSuccess) {
+      onRefresh()
+    }
+  }, [closeSuccess, winnerSuccess, claimSuccess, deleteSuccess, onRefresh])
 
   const isCreator = session.creator.toLowerCase() === userAddress?.toLowerCase()
   const isActive = session.status === 0

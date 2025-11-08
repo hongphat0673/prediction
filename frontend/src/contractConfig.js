@@ -1,7 +1,7 @@
 // Contract configuration
-// After deploying the contract, update the address here
+// Deployed contract address on Base Mainnet
 
-export const CONTRACT_ADDRESS = "YOUR_CONTRACT_ADDRESS_HERE"
+export const CONTRACT_ADDRESS = "0xf91100f0C37548EfA3155FC4BACb010a0297fED0"
 
 export const CONTRACT_ABI = [
   {

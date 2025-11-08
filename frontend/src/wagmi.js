@@ -1,9 +1,9 @@
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
-import { base, baseSepolia } from 'wagmi/chains'
+import { base } from 'wagmi/chains'
 
 export const config = getDefaultConfig({
   appName: 'Prediction Pool dApp',
-  projectId: 'YOUR_PROJECT_ID', // Get from WalletConnect Cloud
-  chains: [base, baseSepolia],
+  projectId: '8f64c64269d5f30ab7e0cbd5adf75f45', // WalletConnect Cloud Project ID
+  chains: [base], // Base Mainnet
   ssr: false,
 })

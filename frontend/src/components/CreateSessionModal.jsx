@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useContractWrite, useWaitForTransactionReceipt } from 'wagmi'
+import { useState, useEffect } from 'react'
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from '../contractConfig'
 import { ethers } from 'ethers'
 
@@ -12,11 +12,26 @@ function CreateSessionModal({ onClose, onSuccess, showNotification }) {
   })
   const [options, setOptions] = useState(['', ''])
 
-  const { data: hash, writeContract, isPending } = useContractWrite()
+  const { data: hash, writeContract, isPending, error } = useWriteContract()
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   })
+
+  // Watch for success
+  useEffect(() => {
+    if (isSuccess) {
+      onSuccess()
+    }
+  }, [isSuccess, onSuccess])
+
+  // Watch for errors
+  useEffect(() => {
+    if (error) {
+      console.error('Transaction error:', error)
+      showNotification('Error: ' + (error.message || 'Transaction failed'), 'error')
+    }
+  }, [error, showNotification])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -69,11 +84,6 @@ function CreateSessionModal({ onClose, onSuccess, showNotification }) {
       console.error('Error creating session:', error)
       showNotification('Error creating session: ' + error.message, 'error')
     }
-  }
-
-  // Watch for success
-  if (isSuccess) {
-    onSuccess()
   }
 
   const handleInputChange = (e) => {
