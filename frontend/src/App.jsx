@@ -36,6 +36,97 @@ function App() {
     setTimeout(() => setNotification(null), 5000)
   }, [])
 
+  // Direct blockchain query - bypasses all caching
+  const loadSessionsDirectly = useCallback(async () => {
+    console.log('=== loadSessionsDirectly called (bypassing wagmi cache) ===')
+    setLoading(true)
+    try {
+      if (!window.ethereum) {
+        console.error('No ethereum provider found')
+        setSessions([])
+        setLoading(false)
+        return
+      }
+
+      const provider = new ethers.BrowserProvider(window.ethereum)
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, provider)
+
+      // Query sessionCounter directly from blockchain
+      const onChainCounter = await contract.sessionCounter()
+      const count = Number(onChainCounter)
+
+      console.log('Direct on-chain sessionCounter:', count)
+
+      if (count === 0) {
+        console.log('⚠️ SessionCounter is 0, no sessions to load')
+        setSessions([])
+        setLoading(false)
+        return
+      }
+
+      const sessionsData = []
+      for (let i = 1; i <= count; i++) {
+        try {
+          const details = await contract.getSessionDetails(i)
+          console.log(`✅ Loaded session ${i}:`, details.name)
+
+          // Load options for this session
+          const options = []
+          for (let j = 0; j < Number(details.optionCount); j++) {
+            const optionDetails = await contract.getOptionDetails(i, j)
+            options.push({
+              id: j,
+              name: optionDetails.name,
+              totalAmount: optionDetails.totalAmount,
+              predictorCount: Number(optionDetails.predictorCount),
+            })
+          }
+
+          // Check if user has predictions
+          let userPredictions = []
+          if (address) {
+            for (let j = 0; j < options.length; j++) {
+              const prediction = await contract.getUserPrediction(i, address, j)
+              if (prediction > 0n) {
+                userPredictions.push({
+                  optionId: j,
+                  amount: prediction,
+                })
+              }
+            }
+          }
+
+          sessionsData.push({
+            id: i,
+            name: details.name,
+            creator: details.creator,
+            startTime: Number(details.startTime),
+            endTime: Number(details.endTime),
+            minPrediction: details.minPrediction,
+            maxPrediction: details.maxPrediction,
+            status: Number(details.status),
+            totalPool: details.totalPool,
+            optionCount: Number(details.optionCount),
+            winnerSelected: details.winnerSelected,
+            winningOptionId: Number(details.winningOptionId),
+            options,
+            userPredictions,
+          })
+        } catch (err) {
+          console.error(`Error loading session ${i}:`, err)
+        }
+      }
+
+      console.log(`✅ Loaded ${sessionsData.length} sessions directly from blockchain`)
+      setSessions(sessionsData)
+    } catch (error) {
+      console.error('Error loading sessions directly:', error)
+      setSessions([])
+    } finally {
+      setLoading(false)
+    }
+  }, [address])
+
   const loadSessions = useCallback(async () => {
     console.log('=== loadSessions called ===')
     setLoading(true)
@@ -132,17 +223,38 @@ function App() {
     }
   }, [sessionCounter, address, showNotification])
 
-  // Load all sessions when sessionCounter changes
+  // Load sessions on mount and when address changes
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log('Wallet connected, loading sessions directly from blockchain...')
+      loadSessionsDirectly()
+    }
+  }, [isConnected, address, loadSessionsDirectly])
+
+  // Also load when sessionCounter changes (as backup)
   useEffect(() => {
     if (sessionCounter) {
-      console.log('Session counter:', sessionCounter?.toString())
+      console.log('Session counter from wagmi:', sessionCounter?.toString())
       loadSessions()
     }
   }, [sessionCounter, loadSessions])
 
-  const handleSessionCreated = () => {
+  const handleSessionCreated = async () => {
     setShowCreateModal(false)
-    showNotification('Session created successfully!', 'success')
+    showNotification('Session created successfully! Refreshing in 3 seconds...', 'success')
+
+    // Wait for block confirmation before reloading
+    setTimeout(async () => {
+      console.log('Reloading sessions after session creation...')
+      await loadSessionsDirectly()
+      showNotification('Sessions refreshed!', 'success')
+    }, 3000)
+  }
+
+  const handleManualRefresh = async () => {
+    console.log('Manual refresh triggered')
+    showNotification('Refreshing sessions from blockchain...', 'info')
+    await loadSessionsDirectly()
   }
 
   const handlePredictClick = (session) => {
@@ -154,8 +266,8 @@ function App() {
     setShowPredictModal(false)
     showNotification('Prediction placed successfully!', 'success')
     // Add a small delay to ensure blockchain state is updated
-    setTimeout(() => {
-      loadSessions()
+    setTimeout(async () => {
+      await loadSessionsDirectly()
     }, 1000)
   }
 
@@ -213,30 +325,40 @@ function App() {
         </div>
       ) : (
         <>
-          <div className="nav-tabs">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="nav-tabs" style={{ marginBottom: 0 }}>
+              <button
+                className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All Sessions
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'my-predictions' ? 'active' : ''}`}
+                onClick={() => setActiveTab('my-predictions')}
+              >
+                My Predictions
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'creator' ? 'active' : ''}`}
+                onClick={() => setActiveTab('creator')}
+              >
+                My Sessions
+              </button>
+              <button
+                className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('dashboard')}
+              >
+                Dashboard
+              </button>
+            </div>
             <button
-              className={`tab-button ${activeTab === 'all' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all')}
+              className="button button-secondary"
+              onClick={handleManualRefresh}
+              disabled={loading}
+              style={{ padding: '0.5rem 1rem' }}
             >
-              All Sessions
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'my-predictions' ? 'active' : ''}`}
-              onClick={() => setActiveTab('my-predictions')}
-            >
-              My Predictions
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'creator' ? 'active' : ''}`}
-              onClick={() => setActiveTab('creator')}
-            >
-              My Sessions
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
-            >
-              Dashboard
+              {loading ? '⟳ Refreshing...' : '🔄 Refresh'}
             </button>
           </div>
 
@@ -306,7 +428,7 @@ function App() {
                       session={session}
                       userAddress={address}
                       onPredict={handlePredictClick}
-                      onRefresh={loadSessions}
+                      onRefresh={loadSessionsDirectly}
                       showNotification={showNotification}
                     />
                   ))}
