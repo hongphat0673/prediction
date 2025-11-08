@@ -1,7 +1,7 @@
 // Contract configuration
 // Deployed contract address on Base Mainnet
 
-export const CONTRACT_ADDRESS = "0xf91100f0C37548EfA3155FC4BACb010a0297fED0"
+export const CONTRACT_ADDRESS = "0x701dA5B382745D58722BB94a1550369B53D756A1"
 
 export const CONTRACT_ABI = [
   {
