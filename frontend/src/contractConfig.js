@@ -1,7 +1,7 @@
 // Contract configuration
-// Deployed contract address on Base Sepolia
+// Deployed contract address on Base Mainnet
 
-export const CONTRACT_ADDRESS = "0x8EBC4A73788D38D2697B219A2d37e10f7f0BBC92"
+export const CONTRACT_ADDRESS = "0xf91100f0C37548EfA3155FC4BACb010a0297fED0"
 
 export const CONTRACT_ABI = [
   {
