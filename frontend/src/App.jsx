@@ -97,6 +97,12 @@ function App() {
             }
           }
 
+          // Skip deleted sessions (empty name means deleted)
+          if (!details.name || details.name.trim() === '') {
+            console.log(`⏭️ Skipping deleted session ${i}`)
+            continue
+          }
+
           sessionsData.push({
             id: i,
             name: details.name,
@@ -187,6 +193,19 @@ function App() {
         filtered = filtered.filter(s => s.status === 1 || s.status === 2)
       }
     }
+
+    // Sort: Active (0) first, then Closed (1), then Distributed (2), then by newest
+    filtered = filtered.sort((a, b) => {
+      // First sort by status (active first)
+      if (a.status !== b.status) {
+        return a.status - b.status
+      }
+      // Then by end time (soonest ending first for active, newest first for others)
+      if (a.status === 0) {
+        return a.endTime - b.endTime // Active: soonest ending first
+      }
+      return b.id - a.id // Others: newest first
+    })
 
     return filtered
   }

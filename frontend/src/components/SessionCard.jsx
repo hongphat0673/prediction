@@ -99,6 +99,43 @@ function SessionCard({ session, userAddress, onPredict, onRefresh, showNotificat
     return winningPrediction && Number(winningPrediction.amount) > 0
   }
 
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}${window.location.pathname}?session=${session.id}`
+    const shareText = `Check out this prediction: "${session.name}" - Pool: ${formatUSDC(session.totalPool)} USDC`
+
+    // Try native share API first (mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: session.name,
+          text: shareText,
+          url: shareUrl,
+        })
+        return
+      } catch (err) {
+        // User cancelled or share failed, fall back to clipboard
+        if (err.name !== 'AbortError') {
+          console.log('Share failed, copying to clipboard')
+        }
+      }
+    }
+
+    // Fall back to clipboard copy
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      showNotification('Link copied to clipboard!', 'success')
+    } catch (err) {
+      // Final fallback for older browsers
+      const textArea = document.createElement('textarea')
+      textArea.value = shareUrl
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textArea)
+      showNotification('Link copied to clipboard!', 'success')
+    }
+  }
+
   return (
     <div className="session-card">
       <div className="session-header">
@@ -106,7 +143,22 @@ function SessionCard({ session, userAddress, onPredict, onRefresh, showNotificat
           <div className="session-title">{session.name}</div>
           {isCreator && <small style={{ color: '#888' }}>Created by you</small>}
         </div>
-        {getStatusBadge()}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            className="share-button"
+            onClick={handleShare}
+            title="Share this session"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="18" cy="5" r="3"/>
+              <circle cx="6" cy="12" r="3"/>
+              <circle cx="18" cy="19" r="3"/>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+            </svg>
+          </button>
+          {getStatusBadge()}
+        </div>
       </div>
 
       <div className="session-info">

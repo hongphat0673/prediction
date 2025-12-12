@@ -563,6 +563,30 @@ body {
   background: rgba(102, 126, 234, 0.2);
 }
 
+/* Share Button */
+.share-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: #333;
+  color: #888;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.share-button:hover {
+  background: #667eea;
+  color: white;
+}
+
+.share-button svg {
+  flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
   .session-grid {
     grid-template-columns: 1fr;
