@@ -54,13 +54,16 @@ describe("PredictionPool", function () {
       const maxPrediction = ethers.parseUnits("1000", 6); // 1000 USDC
       const options = ["Option A", "Option B", "Option C"];
 
-      await expect(
-        predictionPool
-          .connect(creator)
-          .createSession("Test Prediction", endTime, minPrediction, maxPrediction, options)
-      )
+      const tx = await predictionPool
+        .connect(creator)
+        .createSession("Test Prediction", endTime, minPrediction, maxPrediction, options);
+
+      const receipt = await tx.wait();
+      const block = await ethers.provider.getBlock(receipt.blockNumber);
+
+      await expect(tx)
         .to.emit(predictionPool, "SessionCreated")
-        .withArgs(1, "Test Prediction", creator.address, await time.latest(), endTime, minPrediction, maxPrediction);
+        .withArgs(1, "Test Prediction", creator.address, block.timestamp, endTime, minPrediction, maxPrediction);
 
       const sessionDetails = await predictionPool.getSessionDetails(1);
       expect(sessionDetails.name).to.equal("Test Prediction");
@@ -188,9 +191,13 @@ describe("PredictionPool", function () {
     });
 
     it("Should allow creator to close session", async function () {
-      await expect(predictionPool.connect(creator).closeSession(sessionId))
+      const tx = await predictionPool.connect(creator).closeSession(sessionId);
+      const receipt = await tx.wait();
+      const block = await ethers.provider.getBlock(receipt.blockNumber);
+
+      await expect(tx)
         .to.emit(predictionPool, "SessionClosed")
-        .withArgs(sessionId, await time.latest());
+        .withArgs(sessionId, block.timestamp);
 
       const sessionDetails = await predictionPool.getSessionDetails(sessionId);
       expect(sessionDetails.status).to.equal(1); // SessionStatus.Closed
